@@ -148,5 +148,3 @@ Há um teste de contexto Spring (`SistemaAgendamentoApplicationTests`) para gara
 3. Abra um Pull Request descrevendo suas melhorias
 
 ---
-
-🎯 **Pronto!** Este `README` serve como ponto de partida claro e atrativo para qualquer pessoa que chegar ao repositório. Sinta‑se livre para adicionar badges, capturas de tela ou instruções adicionais conforme desejar.
