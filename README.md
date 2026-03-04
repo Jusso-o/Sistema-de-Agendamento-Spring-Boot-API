@@ -1,42 +1,152 @@
-Sistema de Agendamento - Spring Boot API
-Este projeto é uma API REST robusta desenvolvida para o gerenciamento de agendamentos de serviços. A aplicação foi construída utilizando o ecossistema Spring Boot, focando em escalabilidade, organização em camadas e regras de negócio consistentes.
+# 📅 Sistema de Agendamento – Spring Boot API
 
-🚀 Tecnologias e Conceitos Aplicados
-Java 24 e Spring Boot 4.0.3: Utilização das versões mais recentes para alta performance e suporte a novos recursos da linguagem.
+**Sistema-de-Agendamento-Spring-Boot-API**
 
-Spring Data JPA: Abstração da camada de persistência para facilitar operações de CRUD e consultas customizadas.
+Um serviço REST simples para gerenciar agendamentos de serviços (ex.: corte de cabelo, consultas, etc.)
+Construído com Java, Spring Boot, Spring Data JPA e banco de dados em memória H2.
 
-Banco de Dados H2: Banco de dados em memória configurado para agilidade no ambiente de desenvolvimento e testes.
+---
 
-Lombok: Utilizado para reduzir o código boilerplate (Getters, Setters, Construtores) e manter o código limpo.
+## 🚀 Visão geral
 
-Arquitetura em Camadas: Divisão clara entre Controller (Exposição da API), Service (Regras de Negócio), Infrastructure/Entity (Modelo de Dados) e Repository (Acesso aos Dados).
+Este micro‑serviço expõe endpoints para:
 
-Validação de Conflitos: Lógica implementada para impedir agendamentos duplicados no mesmo horário e serviço.
+1. Criar um agendamento
+2. Alterar um agendamento existente
+3. Deletar um agendamento
+4. Listar todos os agendamentos de um dia
 
-🏗️ Estrutura do Projeto
-AgendamentoController: Gerencia os endpoints REST (GET, POST, PUT, DELETE) e a comunicação com o cliente.
+Cada agendamento contém serviço, profissional, data/hora, cliente e dados de contato.
+Regras de negócio incluem restrição de horário ocupado e validação básica.
 
-AgendamentoService: Contém a inteligência da aplicação, como a lógica de verificação de disponibilidade e cálculos de horários.
+O código segue a arquitetura típica tri‑camadas (`controller → service → repository → entity`) e utiliza [Lombok](https://projectlombok.org) para reduzir boilerplate.
 
-AgendamentoRepository: Interface que utiliza o Query Methods do Spring Data para buscas complexas por períodos de data e hora.
+---
 
-Agendamento (Entity): Representação da tabela no banco de dados, incluindo campos como cliente, profissional, serviço e data de inserção automática.
+## 🛠 Tecnologias
 
-🛠️ Como Executar a Aplicação
-Pré-requisitos: Possuir o JDK (versão 17 ou superior) e o Maven instalados.
+- Java 17+
+- Spring Boot 3.x (Spring Web, Spring Data JPA)
+- Banco H2 (in‑memory, console disponível)
+- Lombok
+- Maven
 
-Clonar o repositório:
-git clone https://github.com/seu-usuario/seu-repositorio.git
+---
 
-Compilar e rodar:
-mvn spring-boot:run
+## 📋 Estrutura de pacotes
 
-🛣️ Endpoints Principais
-Método,Endpoint,Descrição
-POST,/agendamentos,Cadastra um novo agendamento (Valida se o horário está vago).
-GET,/agendamentos,Lista todos os agendamentos de um dia específico.
-PUT,/agendamentos,Altera os dados de um agendamento existente.
-DELETE,/agendamentos,Remove um agendamento através do nome do cliente e data/hora.
+```
+src/
+  main/
+    java/
+      Kauaprojeto.Sistema_agendamento/
+        SistemaAgendamentoApplication.java       # classe principal
+        controller/                              # AgendamentoController
+        services/                                # AgendamentoService
+        infrastructure/
+          entity/                                # Agendamento.java (JPA @Entity)
+          repository/                            # AgendamentoRepository (JpaRepository)
+```
 
-Destaque Técnico: A aplicação faz uso de tipos modernos de data (LocalDateTime) e trata retornos de listas de forma eficiente, garantindo que o cliente da API receba informações precisas sobre os compromissos diários.
+---
+
+## ⚙️ Pré‑requisitos
+
+- JDK 17 (ou superior)
+- Maven 3.6+
+- (Opcional) Cliente HTTP como `curl`, Postman, Insomnia
+
+---
+
+## 🧪 Como executar
+
+1. Abra um terminal e vá para a pasta do projeto:
+   ```bash
+   cd Sistema-agendamento/Sistema-agendamento
+   ```
+2. Compile e execute com Maven:
+   ```bash
+   mvn clean spring-boot:run
+   ```
+3. A API estará acessível em `http://localhost:8080`.
+4. Para inspecionar a base H2, abra o console em `http://localhost:8080/h2-console`:
+   - JDBC URL: `jdbc:h2:mem:agendamentos-db`
+   - Usuário: `agenda` (senha em branco)
+
+---
+
+## 📡 Endpoints
+
+| Método | URL                   | Descrição                                   | Parâmetros/Corpo |
+|--------|-----------------------|---------------------------------------------|------------------|
+| POST   | `/agendamentos`       | Cria novo agendamento.                      | JSON `Agendamento` |
+| DELETE | `/agendamentos`       | Deleta pelo cliente e data/hora.            | `cliente`, `dataHoraAgendamento` (query) |
+| GET    | `/agendamentos`       | Lista agendamentos de um dia.               | `data` (query, yyyy-MM-dd) |
+| PUT    | `/agendamentos`       | Atualiza agendamento existente.             | JSON `Agendamento` + `cliente`, `dataHoraAgendamento` (query) |
+
+### 🧩 Exemplo de payload (JSON)
+
+```json
+{
+  "servico": "Corte de cabelo",
+  "profissional": "João",
+  "dataHoraAgendamento": "2026-03-10T14:00:00",
+  "cliente": "Maria",
+  "contatoCliente": "maria@example.com"
+}
+```
+
+### ❌ Validações e regras
+
+- Não é permitido criar dois horários para o **mesmo serviço** no intervalo de uma hora.
+- A atualização verifica se o agendamento informado existe; caso contrário, lança exceção.
+- Exclusões são silenciosas (sem retorno de erro se não existir).
+
+> 💡 As exceções atuais são gerais (`RuntimeException`). Em produção, recomenda‑se utilizar `@ControllerAdvice` para tratamento adequado com respostas customizadas.
+
+---
+
+## 🧩 Modelo de dados
+
+```java
+@Entity
+@Table(name = "agendamento")
+public class Agendamento {
+    @Id @GeneratedValue
+    private Long id;
+    private String servico;
+    private String profissional;
+    private LocalDateTime dataHoraAgendamento;
+    private String cliente;
+    private String contatoCliente;
+    private LocalDateTime dataInsercao = LocalDateTime.now();
+}
+```
+
+---
+
+## ✅ Testes
+
+Há um teste de contexto Spring (`SistemaAgendamentoApplicationTests`) para garantir que a aplicação inicia corretamente. Recomenda‑se adicionar:
+
+- Testes de unidade para `AgendamentoService`.
+- Testes de integração para o controller usando `@WebMvcTest` ou testes com `MockMvc`.
+
+---
+
+## 📁 Observações
+
+- Projeto está pronto para migração a outros bancos apenas alterando `application.properties`.
+- Camadas estão desacopladas para facilitar manutenção e evolução.
+
+---
+
+## 🛎️ Contribuindo
+
+1. Faça um fork
+2. Crie uma branch (`feature/alguma-coisa`)
+3. Abra um Pull Request descrevendo suas melhorias
+
+---
+
+🎯 **Pronto!** Este `README` serve como ponto de partida claro e atrativo para qualquer pessoa que chegar ao repositório. Sinta‑se livre para adicionar badges, capturas de tela ou instruções adicionais conforme desejar.
